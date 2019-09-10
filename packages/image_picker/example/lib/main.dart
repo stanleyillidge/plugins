@@ -5,12 +5,40 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:file/file.dart' as file;
+import 'package:file/local.dart';
+import 'package:file/memory.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
 void main() {
-  runApp(MyApp());
+  if (kIsWeb) {
+    final file.FileSystem fs = MemoryFileSystem(); // We need a more persistent FS.
+    IOOverrides.runZoned(() {
+        IOOverrides.global = IOOverrides.current; // Welcome to the web, dart:io
+        runApp(MyApp());
+      },
+      createDirectory: (String path) => fs.directory(path),
+      createFile: (String path) => fs.file(path),
+      createLink: (String path) => fs.link(path),
+      getCurrentDirectory: () => fs.currentDirectory,
+      setCurrentDirectory: (String path) => fs.currentDirectory = path,
+      getSystemTempDirectory: () => fs.systemTempDirectory,
+      stat: (String path) => fs.stat(path),
+      statSync: (String path) => fs.statSync(path),
+      fseIdentical: (String p1, String p2) => fs.identical(p1, p2),
+      fseIdenticalSync: (String p1, String p2) => fs.identicalSync(p1, p2),
+      fseGetType: (String path, bool followLinks) => fs.type(path, followLinks: followLinks),
+      fseGetTypeSync: (String path, bool followLinks) => fs.typeSync(path, followLinks: followLinks),
+      fsWatch: (String a, int b, bool c) => throw UnsupportedError('unsupported'),
+      fsWatchIsSupported: () => false,
+    );
+  } else {
+    runApp(MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -154,7 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: Center(
-        child: Platform.isAndroid
+        child: /*Platform.isAndroid
             ? FutureBuilder<void>(
                 future: retrieveLostData(),
                 builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
@@ -182,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                 },
               )
-            : (isVideo ? _previewVideo() : _previewImage()),
+            : */(isVideo ? _previewVideo() : _previewImage()),
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,

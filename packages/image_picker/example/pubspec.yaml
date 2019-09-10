@@ -4,6 +4,7 @@ author: Flutter Team <flutter-dev@googlegroups.com>
 
 dependencies:
   video_player: 0.10.1+5
+  file: ^5.0.10
   flutter:
     sdk: flutter
   image_picker:
