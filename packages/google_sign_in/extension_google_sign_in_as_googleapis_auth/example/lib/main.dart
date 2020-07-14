@@ -10,12 +10,12 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
-import 'package:googleapis/people/v1.dart';
+import 'package:googleapis/youtube/v3.dart';
 
 GoogleSignIn _googleSignIn = GoogleSignIn(
   scopes: <String>[
     'email',
-    'https://www.googleapis.com/auth/contacts.readonly',
+    'https://www.googleapis.com/auth/youtube.readonly',
   ],
 );
 
@@ -45,46 +45,30 @@ class SignInDemoState extends State<SignInDemo> {
         _currentUser = account;
       });
       if (_currentUser != null) {
-        _handleGetContact();
+        _handleGetChannels();
       }
     });
     _googleSignIn.signInSilently();
   }
 
-  Future<void> _handleGetContact() async {
+  Future<void> _handleGetChannels() async {
     setState(() {
-      _contactText = 'Loading contact info...';
+      _contactText = 'Loading subscription info...';
     });
 
-    final peopleApi = PeopleApi(await _googleSignIn.authenticatedClient());
-    final response = await peopleApi.people.connections.list(
-      'people/me',
-      personFields: 'names',
-    );
-
-    final firstNamedContactName = _pickFirstNamedContact(response.connections);
+    final youtubeApi = YoutubeApi(await _googleSignIn.authenticatedClient());
+    final response = await youtubeApi.subscriptions.list('snippet', mine: true);
 
     setState(() {
-      if (firstNamedContactName != null) {
-        _contactText = 'I see you know $firstNamedContactName!';
+      if (response.items.isNotEmpty) {
+        final channels =
+            response.items.map((sub) => sub.snippet.title).join(', ');
+
+        _contactText = 'I see you follow: ${channels}!';
       } else {
-        _contactText = 'No contacts to display.';
+        _contactText = 'No channels to display.';
       }
     });
-  }
-
-  String _pickFirstNamedContact(List<Person> connections) {
-    return connections
-        ?.firstWhere(
-          (person) => person.names != null,
-          orElse: () => null,
-        )
-        ?.names
-        ?.firstWhere(
-          (name) => name.displayName != null,
-          orElse: () => null,
-        )
-        ?.displayName;
   }
 
   Future<void> _handleSignIn() async {
@@ -117,7 +101,7 @@ class SignInDemoState extends State<SignInDemo> {
           ),
           RaisedButton(
             child: const Text('REFRESH'),
-            onPressed: _handleGetContact,
+            onPressed: _handleGetChannels,
           ),
         ],
       );
